@@ -1,0 +1,90 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClient.h>
+#include <WebServer.h> 
+const int ledPin1 = 16;// 16 corresponds to GPIO16
+const int ledPin2 = 14;
+int  ir1;
+int ldr1;
+int payload;
+String xx;
+String yy;
+int zz;
+const int freq = 5000;
+const int ledChannel = 0;
+const char* ssid = "********";
+const char* password =  "*******";
+const String endpoint = "http://api.openweathermap.org/data/2.5/weather?q=Mumbai,IN&APPID=";
+const String key = "********";
+const int resolution = 8;
+void setup(){
+Serial.begin(115200);
+pinMode(14, OUTPUT);
+WiFi.begin(ssid, password);
+while (WiFi.status() != WL_CONNECTED) {
+ delay(1000);
+ Serial.println("Connecting to WiFi..");
+ }
+ Serial.println("Connected to the WiFi network");
+ ledcSetup(ledChannel, freq, resolution);
+ ledcAttachPin(ledPin1, ledChannel);
+}
+	 void loop(){
+ zz = temperature();
+ if( zz >= 75)
+ {
+ digitalWrite( 14,HIGH );
+ digitalWrite( 16,LOW );
+ delay(3000);
+  }
+  ir1 = digitalRead(2);
+  ldr1 = analogRead(32);
+  if(ldr1 <= 200 || ir1 == HIGH)
+  {
+  for(int dutyCycle = 20; dutyCycle <= 40; dutyCycle++){   
+   ledcWrite(ledChannel, dutyCycle);
+   ledcRead(dutyCycle);
+   Serial.println("DutyCycle1=");
+   Serial.println(dutyCycle);
+   Serial.println("LDRValue=");
+   Serial.println(ldr1);
+   delay(1);
+   } 
+   }
+  if(ldr1 >= 200 || ir1 == LOW)
+  {
+   int dutyCycle = 255;   
+   ledcWrite(ledChannel, dutyCycle);
+   ledcRead(dutyCycle);
+   Serial.println("DutyCycle1=");
+   Serial.println(dutyCycle);
+   Serial.println("LDRValue=");
+   Serial.println(ldr1);
+   delay(5000);
+    }   
+    }
+    int temperature()
+    {
+    if ((WiFi.status() == WL_CONNECTED)) { //Check the current connection status
+    HTTPClient http;
+ 
+    http.begin(endpoint + key); //Specify the URL
+    int httpCode = http.GET();  //Make the request
+    if (httpCode > 0) { //Check for the returning code
+    String payload = http.getString();
+     xx = payload.substring(228,230);
+     Serial.println(xx);
+     zz = xx.toInt();
+     Serial.println("TEMPERATURE=");
+     Serial.println(zz);
+     return zz;
+     Serial.println(httpCode);
+     Serial.println(payload);
+     }
+     else {
+    Serial.println("Error on HTTP request");
+    }
+    http.end(); //Free the resources
+    }
+    delay(2000);
+    }
